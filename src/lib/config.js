@@ -19,12 +19,12 @@ const config = {
     publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    // Must stay in sync with PLANS in src/app/pricing/page.js
     plans: {
-      default: {
-        amount: 50, // 50 credits
-        price: 500, // $5.00
-        currency: "usd",
-      }
+      basic: { name: "Basic Pack", credits: 100, price: 500, currency: "usd" },
+      standard: { name: "Standard Pack", credits: 250, price: 1000, currency: "usd" },
+      pro: { name: "Professional Pack", credits: 600, price: 2000, currency: "usd" },
+      business: { name: "Business Pack", credits: 2000, price: 5000, currency: "usd" },
     }
   },
   ai: {

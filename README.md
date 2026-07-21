@@ -88,7 +88,7 @@ To successfully deploy and run, you must populate the following environment vari
 5. **Database Push**: Since Prisma does not automatically migrate via Vercel builds by default, you may want to append `npx prisma db push && ` to your Vercel build command, or manually run it locally pointing to your production database URL.
 6. **Integrations Setup**:
    - Establish a **Google Cloud OAuth app**, enabling the callback URL: `https://your-app.vercel.app/api/auth/callback/google`
-   - Setup a **Stripe Webhook**, pointing to `https://your-app.vercel.app/api/stripe/webhook` and selecting the `checkout.session.completed` event to grab your webhook signing secret.
+   - Setup a **Stripe Webhook**, pointing to `https://your-app.vercel.app/api/webhook/stripe` and selecting the `checkout.session.completed` event to grab your webhook signing secret.
    - Set **`WEBHOOK_URL`** to your deployed origin so fal can POST finished jobs to `/api/webhook/fal`. Without it the app still works — it falls back to polling the fal queue.
 
 ---

@@ -11,7 +11,7 @@ const HEADLINE = ["Type", "it.", "See", "it."];
 const STATS = [
   { value: "4K", label: "Max resolution" },
   { value: "12", label: "Aspect ratios" },
-  { value: "10", label: "Free credits" },
+  { value: "50", label: "Free credits" },
 ];
 
 export default function Hero() {
