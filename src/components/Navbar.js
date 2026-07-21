@@ -42,9 +42,15 @@ export default function Navbar() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="group flex items-center gap-2.5">
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-base font-black text-primary-btn-text transition-transform group-hover:rotate-6">
+          {/* Periodic-table tile: K, atomic number 19 (potassium — the banana element) */}
+          <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary transition-transform group-hover:rotate-6">
             <span className="absolute inset-0 rounded-xl bg-primary blur-md opacity-50" />
-            <span className="relative">🍌</span>
+            <span className="absolute left-1 top-0.5 text-[7px] font-bold leading-none text-primary-btn-text/70">
+              19
+            </span>
+            <span className="relative text-lg font-black leading-none text-primary-btn-text">
+              K
+            </span>
           </span>
           <span className="text-[17px] font-black tracking-tight">
             {config.appName}

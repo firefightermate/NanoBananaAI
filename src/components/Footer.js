@@ -30,15 +30,20 @@ export default function Footer() {
         <div className="flex flex-col justify-between gap-10 sm:flex-row">
           <div className="max-w-xs">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-base">
-                🍌
+              <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
+                <span className="absolute left-1 top-0.5 text-[7px] font-bold leading-none text-primary-btn-text/70">
+                  19
+                </span>
+                <span className="text-lg font-black leading-none text-primary-btn-text">
+                  K
+                </span>
               </span>
               <span className="text-[17px] font-black tracking-tight">
                 {config.appName}
               </span>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-secondary-text">
-              {config.tagline} Powered by the nano banana image model on fal.ai.
+              {config.tagline} Powered by Google&apos;s nano banana image model.
             </p>
           </div>
 

@@ -4,7 +4,7 @@
  */
 
 const config = {
-  appName: "Nano Banana",
+  appName: "Kalium",
   tagline: "Type words. Get art.",
   auth: {
     google: {

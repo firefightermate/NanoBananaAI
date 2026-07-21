@@ -632,7 +632,7 @@ export default function Create() {
                     <button
                       onClick={async () => {
                         setDownloading(true);
-                        await downloadImage(resultUrl, `nano-banana-${Date.now()}.jpg`);
+                        await downloadImage(resultUrl, `kalium-${Date.now()}.jpg`);
                         setDownloading(false);
                       }}
                       disabled={downloading}
