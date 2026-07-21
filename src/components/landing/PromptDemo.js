@@ -9,18 +9,22 @@ const SAMPLES = [
   {
     prompt: "A liquid chrome banana orbiting a black hole, cinematic rim light",
     label: "Text to image",
+    src: "/showcase/chrome-banana.jpg",
   },
   {
     prompt: "Rainy Tokyo alley at midnight, neon reflections, 35mm film grain",
     label: "Text to image",
+    src: "/showcase/tokyo-alley.jpg",
   },
   {
-    prompt: "Make her jacket vintage leather and add golden hour light",
-    label: "Edit",
+    prompt: "Portrait of a beekeeper at golden hour, 85mm, shallow depth",
+    label: "Text to image",
+    src: "/showcase/beekeeper.jpg",
   },
   {
     prompt: "Product shot of a matte black bottle on wet stone, studio softbox",
     label: "Text to image",
+    src: "/showcase/black-bottle.jpg",
   },
 ];
 
@@ -162,7 +166,7 @@ export default function PromptDemo() {
                 transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute inset-0"
               >
-                <ArtTile seed={sample.prompt} alt={sample.prompt} />
+                <ArtTile seed={sample.prompt} src={sample.src} alt={sample.prompt} />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
                   <div className="truncate text-[11px] font-medium text-white/90">
                     {sample.prompt}
