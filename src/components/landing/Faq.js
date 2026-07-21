@@ -12,7 +12,7 @@ const ITEMS = [
   },
   {
     q: "How long does a render take?",
-    a: "Most 1K images land in a few seconds. 2K and 4K take longer because there is genuinely more to render. Jobs run on a queue, so you can leave the tab and come back.",
+    a: "Typically well under a minute for a 1K image; 2K and 4K take longer because there is genuinely more to render. Jobs run on a queue, so you can leave the tab and come back.",
   },
   {
     q: "Do I own what I make?",

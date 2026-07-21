@@ -9,9 +9,9 @@ import PromptDemo from "./PromptDemo";
 const HEADLINE = ["Type", "it.", "See", "it."];
 
 const STATS = [
-  { value: "~4s", label: "Median render" },
   { value: "4K", label: "Max resolution" },
-  { value: "14", label: "Reference images" },
+  { value: "12", label: "Aspect ratios" },
+  { value: "10", label: "Free credits" },
 ];
 
 export default function Hero() {
