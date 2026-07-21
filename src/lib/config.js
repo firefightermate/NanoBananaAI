@@ -5,7 +5,7 @@
 
 const config = {
   appName: "Nano Banana",
-  tagline: "Turn a sentence into a masterpiece.",
+  tagline: "Type words. Get art.",
   auth: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
