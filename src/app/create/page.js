@@ -1,35 +1,46 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  FaBolt,
-  FaMagic,
-  FaSearch,
-  FaChevronDown,
-  FaExpand,
-  FaPlus,
-  FaTrash,
-  FaSyncAlt,
-} from "react-icons/fa";
-import { FiDownload } from "react-icons/fi";
-import { motion, AnimatePresence } from "framer-motion";
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "framer-motion";
+import {
+  FiZap,
+  FiImage,
+  FiEdit3,
+  FiSearch,
+  FiDownload,
+  FiPlus,
+  FiTrash2,
+  FiX,
+  FiCornerUpLeft,
+  FiMaximize2,
+} from "react-icons/fi";
 import { downloadImage } from "@/lib/utils";
 import Aurora from "@/components/landing/Aurora";
 
+/* ------------------------------------------------------------------ */
+/* Data                                                               */
+/* ------------------------------------------------------------------ */
+
 const ASPECT_RATIOS = [
-  { label: "1:1 Square", value: "1:1" },
-  { label: "16:9 Landscape", value: "16:9" },
-  { label: "9:16 Portrait", value: "9:16" },
-  { label: "4:3 Classic", value: "4:3" },
-  { label: "3:4 Classic", value: "3:4" },
-  { label: "3:2 Photo", value: "3:2" },
-  { label: "2:3 Photo", value: "2:3" },
-  { label: "21:9 UltraWide", value: "21:9" },
-  { label: "9:21 UltraPortrait", value: "9:21" },
-  { label: "4:5 Portrait", value: "4:5" },
-  { label: "5:4 Portrait", value: "5:4" },
-  { label: "Auto Detect", value: "Auto" },
+  { label: "1:1", value: "1:1", w: 1, h: 1 },
+  { label: "16:9", value: "16:9", w: 16, h: 9 },
+  { label: "9:16", value: "9:16", w: 9, h: 16 },
+  { label: "4:3", value: "4:3", w: 4, h: 3 },
+  { label: "3:4", value: "3:4", w: 3, h: 4 },
+  { label: "3:2", value: "3:2", w: 3, h: 2 },
+  { label: "2:3", value: "2:3", w: 2, h: 3 },
+  { label: "21:9", value: "21:9", w: 21, h: 9 },
+  { label: "9:21", value: "9:21", w: 9, h: 21 },
+  { label: "4:5", value: "4:5", w: 4, h: 5 },
+  { label: "5:4", value: "5:4", w: 5, h: 4 },
+  { label: "Auto", value: "Auto", w: 5, h: 4, auto: true },
 ];
 
 const RESOLUTIONS = [
@@ -39,29 +50,195 @@ const RESOLUTIONS = [
 ];
 
 const IDEAS = [
-  "A liquid chrome banana orbiting a black hole, cinematic rim light",
-  "Rainy Tokyo alley at midnight, neon reflections, 35mm film grain",
-  "Matte black bottle on wet stone, studio softbox, product hero",
-  "Vintage travel poster for the moons of Jupiter, screenprint texture",
+  "A lighthouse made of stained glass at blue hour",
+  "Street food market on a rain-slicked Mars colony",
+  "Botanical illustration of an impossible flower, gold ink",
+  "A tiny dragon asleep in a teacup, macro photography",
+  "Cutaway of a whale-shaped airship, warm cabin light",
+  "Neo-noir detective office, venetian blind shadows",
 ];
 
 const STATUS_LINES = [
   "Reading the prompt…",
   "Composing the frame…",
   "Diffusing pixels…",
-  "Sharpening detail…",
+  "Refining edges…",
+  "Balancing light…",
+  "Almost there…",
 ];
+
+/* ------------------------------------------------------------------ */
+/* Small pieces                                                       */
+/* ------------------------------------------------------------------ */
+
+/** Mini frame that previews the actual shape of an aspect ratio. */
+function RatioGlyph({ ratio, active }) {
+  const max = 22;
+  const scale = max / Math.max(ratio.w, ratio.h);
+  return (
+    <span
+      className="flex items-center justify-center"
+      style={{ width: max, height: max }}
+    >
+      <span
+        className={`rounded-[3px] border transition-colors ${
+          active ? "border-primary-btn-text bg-primary-btn-text/20" : "border-current"
+        } ${ratio.auto ? "border-dashed" : ""}`}
+        style={{ width: ratio.w * scale, height: ratio.h * scale }}
+      />
+    </span>
+  );
+}
+
+/** Orbiting-particle loader shown while a job renders. */
+function ParticleLoader({ resolution, ratioLabel, statusIndex }) {
+  const particles = Array.from({ length: 7 });
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, scale: 0.94 }}
+      className="flex flex-col items-center gap-10"
+    >
+      <div className="relative h-44 w-44">
+        {/* rings */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 rounded-full border border-glass-border"
+          style={{ borderTopColor: "var(--color-primary)" }}
+        />
+        <motion.div
+          animate={{ rotate: -360 }}
+          transition={{ duration: 11, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-5 rounded-full border border-glass-border"
+          style={{ borderBottomColor: "var(--accent)" }}
+        />
+        {/* orbiting particles */}
+        {particles.map((_, i) => (
+          <motion.span
+            key={i}
+            className="absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full"
+            style={{
+              background: i % 2 ? "var(--accent)" : "var(--color-primary)",
+              boxShadow: "0 0 8px currentColor",
+            }}
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 3 + i * 0.7,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <span
+              className="absolute block h-1.5 w-1.5 rounded-full"
+              style={{
+                background: "inherit",
+                transform: `translateX(${34 + i * 9}px)`,
+              }}
+            />
+          </motion.span>
+        ))}
+        {/* breathing core */}
+        <motion.div
+          animate={{ scale: [1, 1.25, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 m-auto h-12 w-12 rounded-2xl bg-primary/20 blur-md"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <FiZap className="text-2xl text-primary" />
+        </div>
+      </div>
+
+      <div className="space-y-3 text-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={statusIndex}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="text-lg font-bold tracking-tight"
+          >
+            {STATUS_LINES[statusIndex]}
+          </motion.div>
+        </AnimatePresence>
+        <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-secondary-text">
+          {resolution} · {ratioLabel}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Empty state: pulsing orb + clickable idea chips. */
+function EmptyState({ mode, onIdea }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="w-full max-w-2xl space-y-10 text-center"
+    >
+      <div className="relative mx-auto h-28 w-28">
+        <motion.div
+          animate={{ scale: [1, 1.35, 1], opacity: [0.35, 0.14, 0.35] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 rounded-full bg-primary blur-2xl"
+        />
+        <motion.div
+          animate={{ rotate: [0, 8, -8, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          className="relative flex h-full w-full items-center justify-center rounded-[2rem] border border-glass-border bg-glass-bg backdrop-blur"
+        >
+          {mode === "generate" ? (
+            <FiImage className="text-3xl text-primary" />
+          ) : (
+            <FiEdit3 className="text-3xl text-primary" />
+          )}
+        </motion.div>
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="text-2xl font-black tracking-tight">
+          {mode === "generate" ? "What are we making?" : "What should change?"}
+        </h2>
+        <p className="text-sm text-secondary-text">
+          {mode === "generate"
+            ? "Describe it below — or steal one of these."
+            : "Add reference images below, then describe the edit."}
+        </p>
+      </div>
+
+      {mode === "generate" && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {IDEAS.map((idea, i) => (
+            <motion.button
+              key={idea}
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15 + i * 0.06 }}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onIdea(idea)}
+              className="rounded-full border border-glass-border bg-glass-bg px-4 py-2 text-xs font-medium text-secondary-text backdrop-blur transition-colors hover:border-primary/40 hover:text-primary-text"
+            >
+              {idea}
+            </motion.button>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Page                                                               */
+/* ------------------------------------------------------------------ */
 
 export default function Create() {
   const { data: session } = useSession();
 
   const [mode, setMode] = useState("generate");
-
-  const [isRatioOpen, setIsRatioOpen] = useState(false);
-  const ratioRef = useRef(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef(null);
-
   const [prompt, setPrompt] = useState("");
   const [aspectRatio, setAspectRatio] = useState(ASPECT_RATIOS[0]);
   const [resolution, setResolution] = useState(RESOLUTIONS[0]);
@@ -69,83 +246,112 @@ export default function Create() {
   const [imagesList, setImagesList] = useState([]);
   const [newImageUrl, setNewImageUrl] = useState("");
 
+  const [openPanel, setOpenPanel] = useState(null); // 'ratio' | 'refs' | null
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const panelRef = useRef(null);
+  const textareaRef = useRef(null);
+
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
   const [resultUrl, setResultUrl] = useState(null);
   const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]); // {url, prompt}
 
+  // Typewriter placeholder cycling through ideas.
+  const [placeholder, setPlaceholder] = useState("");
+  const placeholderIdea = useRef(0);
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (ratioRef.current && !ratioRef.current.contains(event.target)) {
-        setIsRatioOpen(false);
+    if (prompt) return;
+    let i = 0;
+    let cancelled = false;
+    const idea =
+      mode === "generate"
+        ? IDEAS[placeholderIdea.current % IDEAS.length]
+        : "Make the sky a violent sunset and add rain…";
+    const tick = () => {
+      if (cancelled) return;
+      i++;
+      setPlaceholder(idea.slice(0, i));
+      if (i < idea.length) {
+        setTimeout(tick, 34);
+      } else {
+        setTimeout(() => {
+          if (cancelled) return;
+          placeholderIdea.current++;
+          setPlaceholder("");
+          i = 0;
+        }, 2600);
+      }
+    };
+    const start = setTimeout(tick, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(start);
+    };
+  }, [prompt, mode, placeholder === ""]);
+
+  // Close popover on outside click.
+  useEffect(() => {
+    function onDown(e) {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setOpenPanel(null);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
   useEffect(() => {
     setAspectRatio(
       mode === "edit"
-        ? ASPECT_RATIOS.find((r) => r.value === "Auto") || ASPECT_RATIOS[0]
+        ? ASPECT_RATIOS.find((r) => r.value === "Auto")
         : ASPECT_RATIOS[0],
     );
   }, [mode]);
 
-  // Cycle the status copy while a job is in flight.
   useEffect(() => {
     if (!loading) return;
     const id = setInterval(
       () => setStatusIndex((i) => (i + 1) % STATUS_LINES.length),
-      2200,
+      2400,
     );
     return () => clearInterval(id);
   }, [loading]);
 
-  const addImageToList = () => {
-    if (newImageUrl && imagesList.length < 14) {
-      setImagesList([...imagesList, newImageUrl]);
-      setNewImageUrl("");
-    }
-  };
+  // Cursor-glow position on the command bar.
+  const glowX = useMotionValue(0.5);
+  const glowSpring = useSpring(glowX, { stiffness: 120, damping: 20 });
+  const glowLeft = useTransform(glowSpring, (v) => `${v * 100}%`);
+
+  /* ---------------- API plumbing (unchanged behaviour) ------------- */
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-    if (!allowedTypes.includes(file.type)) {
-      setError("Please upload only PNG, JPG, or JPEG images.");
+    if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
+      setError("PNG, JPG or JPEG only.");
       return;
     }
-
-    if (!session) {
-      signIn();
-      return;
-    }
-
+    if (!session) return signIn();
     if (file.size > 5 * 1024 * 1024) {
-      setError("File size exceeds 5MB limit.");
+      setError("File exceeds the 5MB limit.");
       return;
     }
-
     try {
       setIsUploading(true);
       setError(null);
-
       const formData = new FormData();
       formData.append("file", file);
-
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Upload failed.");
-
       const data = await res.json();
       if (data.url && imagesList.length < 14) {
-        setImagesList([...imagesList, data.url]);
+        setImagesList((l) => [...l, data.url]);
       }
     } catch (err) {
-      setError("Failed to upload image. Try a URL instead.");
+      setError("Upload failed. Try a URL instead.");
       console.error(err);
     } finally {
       setIsUploading(false);
@@ -153,19 +359,37 @@ export default function Create() {
     }
   };
 
-  const removeImageFromList = (index) => {
-    setImagesList(imagesList.filter((_, i) => i !== index));
-  };
+  const pollStatus = useCallback(async (requestId, metadata, promptUsed) => {
+    try {
+      const res = await fetch("/api/banana/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, metadata }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Status check failed.");
+
+      if (data.status === "completed") {
+        setResultUrl(data.imageUrl);
+        setHistory((h) => [{ url: data.imageUrl, prompt: promptUsed }, ...h].slice(0, 12));
+        setLoading(false);
+      } else if (data.status === "failed") {
+        throw new Error(data.error || "Generation failed.");
+      } else {
+        setTimeout(() => pollStatus(requestId, metadata, promptUsed), 3000);
+      }
+    } catch (err) {
+      setError(err.message || "Something went wrong while rendering.");
+      setLoading(false);
+    }
+  }, []);
 
   const handleGenerate = async () => {
-    if (!session) {
-      signIn();
-      return;
-    }
-
+    if (!session) return signIn();
     if (mode === "generate" && !prompt.trim()) return;
     if (mode === "edit" && imagesList.length === 0) {
       setError("Add at least one reference image to edit.");
+      setOpenPanel("refs");
       return;
     }
 
@@ -174,6 +398,7 @@ export default function Create() {
       setError(null);
       setResultUrl(null);
       setStatusIndex(0);
+      setOpenPanel(null);
 
       const res = await fetch("/api/banana", {
         method: "POST",
@@ -187,470 +412,441 @@ export default function Create() {
           images_list: imagesList,
         }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to start the job.");
-
-      await pollStatus(data.request_id, data.metadata);
+      await pollStatus(data.request_id, data.metadata, prompt);
     } catch (err) {
       setError(err.message || "An unexpected error occurred.");
-      console.error(err);
       setLoading(false);
     }
   };
 
-  const pollStatus = async (requestId, metadata) => {
-    try {
-      const res = await fetch("/api/banana/status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId, metadata }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Status check failed.");
-
-      if (data.status === "completed") {
-        setResultUrl(data.imageUrl);
-        setLoading(false);
-      } else if (data.status === "failed") {
-        throw new Error(data.error || "Generation failed.");
-      } else {
-        setTimeout(() => pollStatus(requestId, metadata), 3000);
-      }
-    } catch (err) {
-      setError(err.message || "An error occurred while checking status.");
-      setLoading(false);
-    }
+  const useAsReference = (url) => {
+    setMode("edit");
+    setImagesList((l) => (l.length < 14 ? [...l, url] : l));
+    setOpenPanel("refs");
+    textareaRef.current?.focus();
   };
 
-  const disabled =
-    loading ||
-    (mode === "generate" && !prompt.trim()) ||
-    (mode === "edit" && imagesList.length === 0);
+  const canGenerate =
+    !loading &&
+    ((mode === "generate" && prompt.trim()) ||
+      (mode === "edit" && imagesList.length > 0));
+
+  /* ---------------- Render ---------------------------------------- */
 
   return (
-    <div className="flex flex-1 flex-col-reverse lg:h-[calc(100dvh-69px)] lg:flex-row lg:overflow-hidden">
-      {/* Controls */}
-      <aside className="flex w-full shrink-0 flex-col border-glass-border bg-glass-bg backdrop-blur-2xl lg:h-full lg:w-96 lg:overflow-y-auto lg:border-r custom-scrollbar">
-        <div className="space-y-5 border-b border-glass-border p-6">
-          <div>
-            <h2 className="text-lg font-black tracking-tight">Studio</h2>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary-text">
-              nano banana engine
-            </p>
-          </div>
+    <div className="relative flex h-[calc(100dvh-69px)] flex-col overflow-hidden">
+      <Aurora />
 
-          <div className="flex rounded-lg border border-glass-border bg-glass-hover p-1">
-            {[
-              { id: "generate", label: "Generate", Icon: FaMagic },
-              { id: "edit", label: "Edit", Icon: FaSyncAlt },
-            ].map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                onClick={() => setMode(id)}
-                className={`relative flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                  mode === id ? "text-primary-btn-text" : "text-secondary-text hover:text-primary-text"
-                }`}
-              >
-                {mode === id && (
-                  <motion.span
-                    layoutId="mode-pill"
-                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                    className="absolute inset-0 rounded-md bg-primary"
-                  />
-                )}
-                <span className="relative flex items-center gap-2">
-                  <Icon className="text-xs" />
-                  {label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-5 p-6">
-          {/* Prompt */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-semibold">
-              <span className="h-1 w-1 rounded-full bg-primary" />
-              {mode === "generate" ? "Prompt" : "What should change?"}
-            </label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder={
-                mode === "generate"
-                  ? "A cybernetic banana drifting through a nebula…"
-                  : "Make the jacket vintage leather and light it at golden hour…"
-              }
-              className="h-32 w-full resize-none rounded-lg border border-glass-border bg-bg-page/60 p-3 text-sm transition-colors placeholder:text-secondary-text/60 focus:border-primary/50 focus:outline-none"
-            />
-            {mode === "generate" && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {IDEAS.slice(0, 2).map((idea) => (
-                  <button
-                    key={idea}
-                    onClick={() => setPrompt(idea)}
-                    className="truncate rounded-md border border-glass-border bg-glass-hover px-2 py-1 text-[10px] text-secondary-text transition-colors hover:text-primary-text"
-                  >
-                    {idea.slice(0, 34)}…
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Reference images */}
-          {mode === "edit" && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="space-y-3 overflow-hidden"
+      {/* Mode switch — floating top centre */}
+      <div className="relative z-20 flex justify-center pt-5">
+        <div className="flex rounded-full border border-glass-border bg-glass-bg p-1 backdrop-blur-xl">
+          {[
+            { id: "generate", label: "Generate", Icon: FiImage },
+            { id: "edit", label: "Edit", Icon: FiEdit3 },
+          ].map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setMode(id)}
+              className={`relative flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
+                mode === id ? "text-primary-btn-text" : "text-secondary-text hover:text-primary-text"
+              }`}
             >
-              <label className="flex items-center gap-2 text-xs font-semibold">
-                <span className="h-1 w-1 rounded-full bg-primary" />
-                References ({imagesList.length}/14)
-              </label>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  placeholder="Paste an image URL…"
-                  className="flex-1 rounded-lg border border-glass-border bg-bg-page/60 px-3 py-2 text-[11px] outline-none focus:border-primary/50"
+              {mode === id && (
+                <motion.span
+                  layoutId="create-mode-pill"
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  className="absolute inset-0 rounded-full bg-primary"
                 />
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  hidden
-                  accept=".png, .jpg, .jpeg"
-                  onChange={handleFileUpload}
-                />
-                <button
-                  onClick={() => {
-                    if (!session) return signIn();
-                    fileInputRef.current?.click();
-                  }}
-                  disabled={isUploading || imagesList.length >= 14}
-                  title="Upload a file"
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-btn-text disabled:opacity-40"
-                >
-                  {isUploading ? (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  ) : (
-                    <FaPlus />
-                  )}
-                </button>
-                <button
-                  onClick={addImageToList}
-                  disabled={!newImageUrl || imagesList.length >= 14}
-                  title="Add URL"
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-btn-text disabled:opacity-40"
-                >
-                  <FaPlus />
-                </button>
-              </div>
-
-              {imagesList.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 pt-1">
-                  {imagesList.map((url, idx) => (
-                    <motion.div
-                      key={url + idx}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="group relative aspect-square overflow-hidden rounded-lg border border-glass-border"
-                    >
-                      <img src={url} alt="" className="h-full w-full object-cover" />
-                      <button
-                        onClick={() => removeImageFromList(idx)}
-                        className="absolute right-1 top-1 rounded-md bg-red-500/80 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                      >
-                        <FaTrash className="text-[10px]" />
-                      </button>
-                    </motion.div>
-                  ))}
-                </div>
               )}
+              <span className="relative flex items-center gap-2">
+                <Icon className="text-sm" />
+                {label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Canvas */}
+      <div className="relative z-10 flex flex-1 items-center justify-center overflow-y-auto px-6 py-6 custom-scrollbar">
+        <AnimatePresence mode="wait">
+          {!resultUrl && !loading && !error && (
+            <EmptyState
+              key={`empty-${mode}`}
+              mode={mode}
+              onIdea={(idea) => {
+                setPrompt(idea);
+                textareaRef.current?.focus();
+              }}
+            />
+          )}
+
+          {loading && (
+            <ParticleLoader
+              key="loading"
+              resolution={resolution.value.toUpperCase()}
+              ratioLabel={aspectRatio.label}
+              statusIndex={statusIndex}
+            />
+          )}
+
+          {error && !loading && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full max-w-sm space-y-4 rounded-2xl border border-red-500/20 bg-red-500/[0.04] p-8 text-center backdrop-blur"
+            >
+              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-red-400">
+                Render failed
+              </div>
+              <p className="text-sm leading-relaxed text-secondary-text">
+                {typeof error === "string" ? error : "Request failed. Check your credits."}
+              </p>
+              <button
+                onClick={() => setError(null)}
+                className="rounded-full border border-glass-border px-5 py-2 text-xs font-semibold transition-colors hover:bg-glass-hover"
+              >
+                Try again
+              </button>
             </motion.div>
           )}
 
-          {/* Aspect ratio */}
-          <div className="space-y-2" ref={ratioRef}>
-            <label className="flex items-center gap-2 text-xs font-semibold">
-              <span className="h-1 w-1 rounded-full bg-primary" />
-              Aspect ratio
-            </label>
-            <div className="relative">
-              <button
-                onClick={() => setIsRatioOpen(!isRatioOpen)}
-                className="flex w-full items-center justify-between rounded-lg border border-glass-border bg-bg-page/60 p-3 text-xs font-semibold transition-colors hover:bg-glass-hover"
-              >
-                <span className="flex items-center gap-3">
-                  <FaExpand className="text-primary" />
-                  {aspectRatio.label}
-                </span>
-                <FaChevronDown
-                  className={`text-[10px] transition-transform duration-300 ${isRatioOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              <AnimatePresence>
-                {isRatioOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 6 }}
-                    className="glass-dropdown custom-scrollbar absolute left-0 right-0 top-12 z-[100] max-h-60 overflow-y-auto rounded-lg p-1 shadow-2xl"
+          {resultUrl && !loading && (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, scale: 0.94, filter: "blur(14px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="group relative max-w-full overflow-hidden rounded-2xl border border-glass-border shadow-[0_50px_140px_-40px_rgba(0,0,0,0.95)]"
+            >
+              <img
+                src={resultUrl}
+                alt={prompt}
+                className="h-auto max-h-[62vh] w-auto max-w-full"
+              />
+              {/* hover actions */}
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-5 opacity-0 transition-opacity duration-400 group-hover:opacity-100">
+                <p className="min-w-0 truncate text-xs font-medium text-white/90">
+                  {prompt || "Untitled"}
+                </p>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    onClick={() => useAsReference(resultUrl)}
+                    title="Use as reference for an edit"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white backdrop-blur transition-transform hover:scale-105"
                   >
-                    {ASPECT_RATIOS.map((ratio) => (
-                      <button
-                        key={ratio.value}
-                        onClick={() => {
-                          setAspectRatio(ratio);
-                          setIsRatioOpen(false);
-                        }}
-                        className={`flex w-full items-center gap-3 rounded-md p-2.5 text-left text-[11px] font-semibold transition-colors ${
-                          aspectRatio.value === ratio.value
-                            ? "bg-primary text-primary-btn-text"
-                            : "text-secondary-text hover:bg-glass-hover hover:text-primary-text"
-                        }`}
-                      >
-                        <span
-                          className={`h-3 w-3 rounded-sm border ${
-                            aspectRatio.value === ratio.value
-                              ? "border-current"
-                              : "border-divider"
-                          }`}
-                        />
-                        {ratio.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+                    <FiCornerUpLeft className="text-sm" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setDownloading(true);
+                      await downloadImage(resultUrl, `kalium-${Date.now()}.jpg`);
+                      setDownloading(false);
+                    }}
+                    disabled={downloading}
+                    title="Download"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black transition-transform hover:scale-105 disabled:opacity-50"
+                  >
+                    {downloading ? (
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                    ) : (
+                      <FiDownload className="text-sm" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          {/* Resolution */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-semibold">
-              <span className="h-1 w-1 rounded-full bg-primary" />
-              Resolution
-            </label>
-            <div className="flex gap-2">
-              {RESOLUTIONS.map((res) => (
-                <button
-                  key={res.value}
-                  onClick={() => setResolution(res)}
-                  className={`flex flex-1 flex-col items-center rounded-lg border py-3 transition-colors ${
-                    resolution.value === res.value
-                      ? "border-primary/50 bg-primary text-primary-btn-text"
-                      : "border-glass-border bg-bg-page/60 text-secondary-text hover:text-primary-text"
+        {/* Session history rail */}
+        <AnimatePresence>
+          {history.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="absolute right-4 top-1/2 hidden max-h-[60vh] -translate-y-1/2 flex-col gap-2 overflow-y-auto no-scrollbar lg:flex"
+            >
+              {history.map((item, i) => (
+                <motion.button
+                  key={item.url + i}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.1, x: -4 }}
+                  onClick={() => setResultUrl(item.url)}
+                  title={item.prompt}
+                  className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border transition-colors ${
+                    resultUrl === item.url ? "border-primary" : "border-glass-border"
                   }`}
                 >
-                  <span className="text-sm font-bold uppercase">{res.value}</span>
-                  <span className="mt-0.5 text-[10px] opacity-80">{res.cost} cr</span>
-                </button>
+                  <img src={item.url} alt="" className="h-full w-full object-cover" />
+                </motion.button>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-          {/* Web search */}
-          <button
-            onClick={() => setGoogleSearch(!googleSearch)}
-            className={`flex w-full items-center justify-between rounded-lg border p-3 transition-colors ${
-              googleSearch
-                ? "border-primary/50 bg-primary text-primary-btn-text"
-                : "border-glass-border bg-bg-page/60 text-secondary-text hover:text-primary-text"
-            }`}
-          >
-            <span className="flex items-center gap-3">
-              <FaSearch className="text-xs" />
-              <span className="text-[10px] font-black uppercase tracking-widest">
-                Smart search
-              </span>
-            </span>
-            <span
-              className={`relative flex h-4 w-8 items-center rounded-full ${
-                googleSearch ? "bg-black/25" : "border border-glass-border bg-bg-page"
-              }`}
-            >
-              <motion.span
-                animate={{ x: googleSearch ? 16 : 2 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="absolute h-2.5 w-2.5 rounded-full bg-white"
-              />
-            </span>
-          </button>
-        </div>
-
-        <div className="border-t border-glass-border p-6">
-          <button
-            onClick={handleGenerate}
-            disabled={disabled}
-            className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-lg bg-primary py-3.5 text-xs font-black uppercase tracking-wider text-primary-btn-text transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <span className="absolute inset-0 -translate-x-full bg-white/25 transition-transform duration-500 group-hover:translate-x-full" />
-            {loading ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-              <FaBolt />
-            )}
-            {loading ? "Rendering…" : `Generate · ${resolution.cost} credits`}
-          </button>
-        </div>
-      </aside>
-
-      {/* Canvas */}
-      <main className="relative flex min-h-[55vh] flex-1 flex-col overflow-hidden lg:min-h-0">
-        <Aurora />
-
-        <div className="custom-scrollbar relative z-10 flex flex-1 items-center justify-center overflow-y-auto p-8 lg:p-12">
-          <AnimatePresence mode="wait">
-            {!resultUrl && !loading && !error && (
+      {/* Command bar */}
+      <div className="relative z-30 px-4 pb-5 sm:px-6">
+        <div ref={panelRef} className="relative mx-auto w-full max-w-3xl">
+          {/* Popover panels */}
+          <AnimatePresence>
+            {openPanel === "ratio" && (
               <motion.div
-                key="empty"
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="w-full max-w-md space-y-7 text-center"
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                transition={{ duration: 0.2 }}
+                className="glass-dropdown absolute bottom-full left-0 right-0 z-40 mb-3 rounded-2xl p-4 shadow-2xl"
               >
-                <div className="relative mx-auto h-24 w-24">
-                  <div className="absolute inset-0 rounded-3xl bg-primary/20 blur-2xl" />
-                  <div className="relative flex h-full w-full rotate-3 items-center justify-center rounded-3xl border border-glass-border bg-glass-bg">
-                    <FaMagic className="text-2xl text-primary" />
-                  </div>
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary-text">
+                    Frame
+                  </span>
+                  <span className="text-[10px] font-bold text-primary">
+                    {aspectRatio.label}
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  <h2 className="text-xl font-bold tracking-tight">
-                    {mode === "generate" ? "Describe something." : "Drop something in."}
-                  </h2>
-                  <p className="text-sm text-secondary-text">
-                    {mode === "generate"
-                      ? "The more specific the sentence, the closer the frame."
-                      : "Add references, then say what should change."}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
-            {loading && (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-10"
-              >
-                <div className="relative">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    className="h-40 w-40 rounded-full border-2 border-glass-border border-t-primary"
-                  />
-                  <motion.div
-                    animate={{ rotate: -360 }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-6 rounded-full border border-glass-border border-b-[var(--accent)]"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <FaBolt className="animate-pulse text-xl text-primary" />
-                  </div>
-                </div>
-
-                <div className="space-y-3 text-center">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={statusIndex}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="text-lg font-bold tracking-tight"
-                    >
-                      {STATUS_LINES[statusIndex]}
-                    </motion.div>
-                  </AnimatePresence>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary-text">
-                    {resolution.value} · {aspectRatio.label}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {error && (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="w-full max-w-sm space-y-3 rounded-2xl border border-red-500/20 bg-red-500/[0.04] p-8 text-center"
-              >
-                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">
-                  Something broke
-                </div>
-                <p className="text-sm leading-relaxed text-secondary-text">
-                  {typeof error === "string" ? error : "Request failed. Check your credits."}
-                </p>
-                <button
-                  onClick={() => setError(null)}
-                  className="rounded-full border border-glass-border px-4 py-1.5 text-xs font-semibold transition-colors hover:bg-glass-hover"
-                >
-                  Dismiss
-                </button>
-              </motion.div>
-            )}
-
-            {resultUrl && (
-              <motion.div
-                key="result"
-                initial={{ opacity: 0, scale: 0.96, filter: "blur(10px)" }}
-                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="group relative overflow-hidden rounded-2xl border border-glass-border shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)]"
-              >
-                <img src={resultUrl} alt={prompt} className="h-auto max-h-[75vh] w-auto" />
-
-                <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-transparent to-transparent p-6 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                  <div className="flex items-end justify-between gap-4">
-                    <div className="min-w-0 space-y-2">
-                      <h3 className="truncate text-sm font-semibold text-white">
-                        {prompt || "Untitled"}
-                      </h3>
-                      <div className="flex gap-2">
-                        {[aspectRatio.label, resolution.value.toUpperCase()].map((chip) => (
-                          <span
-                            key={chip}
-                            className="rounded-md bg-white/10 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur"
-                          >
-                            {chip}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                  {ASPECT_RATIOS.map((ratio) => (
                     <button
-                      onClick={async () => {
-                        setDownloading(true);
-                        await downloadImage(resultUrl, `kalium-${Date.now()}.jpg`);
-                        setDownloading(false);
+                      key={ratio.value}
+                      onClick={() => {
+                        setAspectRatio(ratio);
+                        setOpenPanel(null);
                       }}
-                      disabled={downloading}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-all ${
+                        aspectRatio.value === ratio.value
+                          ? "border-primary/60 bg-primary text-primary-btn-text"
+                          : "border-glass-border bg-bg-page/40 text-secondary-text hover:border-primary/30 hover:text-primary-text"
+                      }`}
                     >
-                      {downloading ? (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
-                      ) : (
-                        <FiDownload />
-                      )}
+                      <RatioGlyph ratio={ratio} active={aspectRatio.value === ratio.value} />
+                      <span className="text-[10px] font-bold">{ratio.label}</span>
                     </button>
-                  </div>
+                  ))}
                 </div>
+              </motion.div>
+            )}
+
+            {openPanel === "refs" && (
+              <motion.div
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                transition={{ duration: 0.2 }}
+                className="glass-dropdown absolute bottom-full left-0 right-0 z-40 mb-3 rounded-2xl p-4 shadow-2xl"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary-text">
+                    Reference images · {imagesList.length}/14
+                  </span>
+                  <button
+                    onClick={() => setOpenPanel(null)}
+                    className="text-secondary-text hover:text-primary-text"
+                  >
+                    <FiX />
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newImageUrl && imagesList.length < 14) {
+                        setImagesList((l) => [...l, newImageUrl]);
+                        setNewImageUrl("");
+                      }
+                    }}
+                    placeholder="Paste an image URL and press Enter…"
+                    className="flex-1 rounded-lg border border-glass-border bg-bg-page/60 px-3 py-2 text-xs outline-none focus:border-primary/50"
+                  />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    hidden
+                    accept=".png, .jpg, .jpeg"
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!session) return signIn();
+                      fileInputRef.current?.click();
+                    }}
+                    disabled={isUploading || imagesList.length >= 14}
+                    className="flex h-9 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary hover:text-primary-btn-text disabled:opacity-40"
+                  >
+                    {isUploading ? (
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    ) : (
+                      <FiPlus />
+                    )}
+                    Upload
+                  </button>
+                </div>
+
+                {imagesList.length > 0 && (
+                  <div className="mt-3 grid grid-cols-5 gap-2 sm:grid-cols-7">
+                    {imagesList.map((url, idx) => (
+                      <motion.div
+                        key={url + idx}
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="group relative aspect-square overflow-hidden rounded-lg border border-glass-border"
+                      >
+                        <img src={url} alt="" className="h-full w-full object-cover" />
+                        <button
+                          onClick={() =>
+                            setImagesList((l) => l.filter((_, i) => i !== idx))
+                          }
+                          className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          <FiTrash2 className="text-sm text-red-400" />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* The bar itself */}
+          <motion.div
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              glowX.set((e.clientX - rect.left) / rect.width);
+            }}
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="relative overflow-hidden rounded-2xl border border-glass-border bg-glass-bg shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
+          >
+            {/* cursor glow along the top edge */}
+            <motion.span
+              className="pointer-events-none absolute top-0 h-px w-40 -translate-x-1/2 bg-gradient-to-r from-transparent via-primary to-transparent"
+              style={{ left: glowLeft }}
+            />
+
+            <textarea
+              ref={textareaRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (canGenerate) handleGenerate();
+                }
+              }}
+              placeholder={placeholder || " "}
+              rows={2}
+              className="w-full resize-none bg-transparent px-5 pt-4 text-[15px] leading-relaxed outline-none placeholder:text-secondary-text/50"
+            />
+
+            <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
+              {/* Ratio chip */}
+              <button
+                onClick={() => setOpenPanel(openPanel === "ratio" ? null : "ratio")}
+                className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                  openPanel === "ratio"
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-glass-border text-secondary-text hover:text-primary-text"
+                }`}
+              >
+                <FiMaximize2 className="text-[10px]" />
+                {aspectRatio.label}
+              </button>
+
+              {/* Resolution segmented */}
+              <div className="flex rounded-lg border border-glass-border p-0.5">
+                {RESOLUTIONS.map((res) => (
+                  <button
+                    key={res.value}
+                    onClick={() => setResolution(res)}
+                    className={`relative rounded-md px-2.5 py-1 text-[11px] font-bold uppercase transition-colors ${
+                      resolution.value === res.value
+                        ? "text-primary-btn-text"
+                        : "text-secondary-text hover:text-primary-text"
+                    }`}
+                  >
+                    {resolution.value === res.value && (
+                      <motion.span
+                        layoutId="res-pill"
+                        transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                        className="absolute inset-0 rounded-md bg-primary"
+                      />
+                    )}
+                    <span className="relative">{res.value}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Refs chip (edit mode) */}
+              {mode === "edit" && (
+                <button
+                  onClick={() => setOpenPanel(openPanel === "refs" ? null : "refs")}
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                    imagesList.length > 0
+                      ? "border-primary/50 bg-primary/10 text-primary"
+                      : "border-glass-border text-secondary-text hover:text-primary-text"
+                  }`}
+                >
+                  <FiImage className="text-[10px]" />
+                  {imagesList.length > 0 ? `${imagesList.length} refs` : "Add refs"}
+                </button>
+              )}
+
+              {/* Web search toggle */}
+              <button
+                onClick={() => setGoogleSearch(!googleSearch)}
+                title="Ground the render in live web search"
+                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                  googleSearch
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-glass-border text-secondary-text hover:text-primary-text"
+                }`}
+              >
+                <FiSearch className="text-[10px]" />
+                Web
+              </button>
+
+              <div className="flex-1" />
+
+              {/* Generate */}
+              <motion.button
+                onClick={handleGenerate}
+                disabled={!canGenerate}
+                whileHover={canGenerate ? { scale: 1.04 } : {}}
+                whileTap={canGenerate ? { scale: 0.96 } : {}}
+                className="group relative flex items-center gap-2 overflow-hidden rounded-xl bg-primary px-5 py-2.5 text-xs font-black uppercase tracking-wider text-primary-btn-text shadow-lg shadow-primary/25 disabled:opacity-40 disabled:shadow-none"
+              >
+                <span className="absolute inset-0 -translate-x-full bg-white/25 transition-transform duration-500 group-hover:translate-x-full" />
+                {loading ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <FiZap />
+                )}
+                <span className="relative hidden sm:inline">
+                  {loading ? "Rendering" : `Render · ${resolution.cost} cr`}
+                </span>
+                <span className="relative sm:hidden">{resolution.cost} cr</span>
+              </motion.button>
+            </div>
+          </motion.div>
+
+          <p className="mt-2 text-center text-[10px] text-secondary-text/60">
+            Enter to render · Shift+Enter for a new line
+          </p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
