@@ -4,27 +4,35 @@ import { Providers } from "./providers";
 import Navbar from "../components/Navbar";
 import config from "@/lib/config";
 
-const font = Outfit({ subsets: ["latin"] });
+const font = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
 
 export const metadata = {
-  title: "NanoBanana 2.0 - Premium AI Generator",
-  description: "The next evolution of image generation templates.",
+  title: `${config.appName} — ${config.tagline}`,
+  description:
+    "Generate and edit photoreal images from plain language. Powered by the nano banana image model on fal.ai.",
+  openGraph: {
+    title: `${config.appName} — ${config.tagline}`,
+    description:
+      "Generate and edit photoreal images from plain language. Powered by the nano banana image model.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }) {
-  const theme = config?.theme || "slate-indigo";
+  const theme = process.env.NEXT_PUBLIC_THEME || "banana";
 
   return (
-    <html lang="en" className="h-full w-full" data-theme={theme}>
-      <body className={`${font.className} h-full w-full flex flex-col antialiased bg-bg-page text-primary-text overflow-hidden`}>
+    <html lang="en" data-theme={theme} className={font.variable}>
+      <body className="min-h-dvh flex flex-col bg-bg-page text-primary-text antialiased">
         <Providers>
           <Navbar />
-          <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-            {children}
-          </div>
+          <div className="flex-1 flex flex-col">{children}</div>
         </Providers>
       </body>
     </html>
   );
 }
-

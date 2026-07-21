@@ -4,7 +4,8 @@
  */
 
 const config = {
-  appName: "Nano Banana Template",
+  appName: "Nano Banana",
+  tagline: "Turn a sentence into a masterpiece.",
   auth: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -27,8 +28,10 @@ const config = {
     }
   },
   ai: {
-    banana: {
-      apiKey: process.env.NANO_BANANA_API_KEY,
+    fal: {
+      apiKey: process.env.FAL_KEY,
+      // Swap for "fal-ai/nano-banana-pro" or "fal-ai/nano-banana" as needed.
+      model: process.env.FAL_MODEL || "fal-ai/nano-banana-2",
     }
   },
   db: {
@@ -42,6 +45,7 @@ const requiredKeys = [
   ["GOOGLE_CLIENT_SECRET", config.auth.google.clientSecret],
   ["STRIPE_SECRET_KEY", config.stripe.secretKey],
   ["DATABASE_URL", config.db.url],
+  ["FAL_KEY", config.ai.fal.apiKey],
 ];
 
 if (typeof window === "undefined") {

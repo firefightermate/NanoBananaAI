@@ -1,24 +1,72 @@
 "use client";
 
 import Link from "next/link";
+import config from "@/lib/config";
+
+const COLUMNS = [
+  {
+    title: "Product",
+    links: [
+      { name: "Create", href: "/create" },
+      { name: "Gallery", href: "/gallery" },
+      { name: "Pricing", href: "/pricing" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { name: "Terms of Service", href: "/terms" },
+      { name: "Privacy Policy", href: "/privacy" },
+    ],
+  },
+];
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
+  const year = new Date().getFullYear();
 
   return (
-    <footer className="w-full border-t border-divider/40 bg-bg-page py-6 text-center text-xs text-secondary-text mt-auto">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          &copy; {currentYear} AI SaaS Studio. All rights reserved.
+    <footer className="relative border-t border-divider/50 bg-bg-page">
+      <div className="mx-auto max-w-7xl px-6 py-14">
+        <div className="flex flex-col justify-between gap-10 sm:flex-row">
+          <div className="max-w-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-base">
+                🍌
+              </span>
+              <span className="text-[17px] font-black tracking-tight">
+                {config.appName}
+              </span>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-secondary-text">
+              {config.tagline} Powered by the nano banana image model on fal.ai.
+            </p>
+          </div>
+
+          <div className="flex gap-14">
+            {COLUMNS.map((col) => (
+              <div key={col.title}>
+                <h4 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-secondary-text">
+                  {col.title}
+                </h4>
+                <ul className="space-y-2">
+                  {col.links.map((link) => (
+                    <li key={link.name}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-secondary-text transition-colors hover:text-primary-text"
+                      >
+                        {link.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-4">
-          <Link href="/terms" className="hover:text-primary-text transition-colors">
-            Terms of Service
-          </Link>
-          <span className="opacity-30">•</span>
-          <Link href="/privacy" className="hover:text-primary-text transition-colors">
-            Privacy Policy
-          </Link>
+
+        <div className="mt-12 border-t border-divider/40 pt-6 text-xs text-secondary-text">
+          &copy; {year} {config.appName}. All rights reserved.
         </div>
       </div>
     </footer>

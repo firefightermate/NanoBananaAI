@@ -75,7 +75,9 @@ To successfully deploy and run, you must populate the following environment vari
 | **Stripe Billing**    | `STRIPE_SECRET_KEY`                  | Get from [Stripe Dashboard](https://dashboard.stripe.com/apikeys)                            |
 |                       | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Get from [Stripe Dashboard](https://dashboard.stripe.com/apikeys)                            |
 |                       | `STRIPE_WEBHOOK_SECRET`              | Webhook secret for resolving credit purchases                                                |
-| **AI Generator**      | `NANO_BANANA_API_KEY`                | Create an account and get key from [muapi.ai/access-keys](https://muapi.ai/access-keys?utm_source=github&utm_medium=readme&utm_campaign=nano-banana-generator)      |
+| **AI Generator**      | `FAL_KEY`                            | Get a key from [fal.ai/dashboard/keys](https://fal.ai/dashboard/keys)                        |
+|                       | `FAL_MODEL`                          | Optional. `fal-ai/nano-banana-2` (default), `fal-ai/nano-banana-pro`, or `fal-ai/nano-banana` |
+|                       | `WEBHOOK_URL`                        | Public base URL fal posts completed jobs back to (`/api/webhook/fal`)                        |
 
 ### 🚀 Launching on Vercel: Step-by-Step
 
@@ -87,6 +89,7 @@ To successfully deploy and run, you must populate the following environment vari
 6. **Integrations Setup**:
    - Establish a **Google Cloud OAuth app**, enabling the callback URL: `https://your-app.vercel.app/api/auth/callback/google`
    - Setup a **Stripe Webhook**, pointing to `https://your-app.vercel.app/api/stripe/webhook` and selecting the `checkout.session.completed` event to grab your webhook signing secret.
+   - Set **`WEBHOOK_URL`** to your deployed origin so fal can POST finished jobs to `/api/webhook/fal`. Without it the app still works — it falls back to polling the fal queue.
 
 ---
 
