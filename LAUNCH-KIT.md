@@ -137,6 +137,7 @@ is the thing to fix next.
 
 ## Cost guard
 
-Every free sign-up costs you ≈$0.15 of fal credit if they use all 36.
+Every free sign-up costs you about $0.24 of fal credit if they use all 36
+(36 credits = 3 renders at 12 credits each; fal bills $0.08 per image).
 If a post takes off, watch your fal balance: https://fal.ai/dashboard
 Kill switch: set the fal key to a spending limit in the fal dashboard.
