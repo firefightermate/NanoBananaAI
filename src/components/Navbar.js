@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -131,12 +131,20 @@ export default function Navbar() {
               </div>
             </>
           ) : (
-            <Link
-              href="/create"
-              className="rounded-full bg-primary px-5 py-2 text-[13px] font-bold text-primary-btn-text transition-transform hover:scale-[1.04] active:scale-95"
-            >
-              Start free
-            </Link>
+            <>
+              <button
+                onClick={() => signIn("google", { callbackUrl: "/create" })}
+                className="rounded-full border border-glass-border bg-glass-bg px-5 py-2 text-[13px] font-bold text-primary-text transition-colors hover:bg-glass-hover"
+              >
+                Sign in
+              </button>
+              <Link
+                href="/create"
+                className="rounded-full bg-primary px-5 py-2 text-[13px] font-bold text-primary-btn-text transition-transform hover:scale-[1.04] active:scale-95"
+              >
+                Start free
+              </Link>
+            </>
           )}
         </div>
 
@@ -191,12 +199,20 @@ export default function Navbar() {
                   Sign out
                 </button>
               ) : (
-                <Link
-                  href="/create"
-                  className="rounded-lg bg-primary py-3 text-center text-sm font-bold text-primary-btn-text"
-                >
-                  Start free
-                </Link>
+                <>
+                  <button
+                    onClick={() => signIn("google", { callbackUrl: "/create" })}
+                    className="rounded-lg border border-glass-border bg-glass-bg py-3 text-center text-sm font-bold text-primary-text"
+                  >
+                    Sign in
+                  </button>
+                  <Link
+                    href="/create"
+                    className="mt-2 rounded-lg bg-primary py-3 text-center text-sm font-bold text-primary-btn-text"
+                  >
+                    Start free
+                  </Link>
+                </>
               )}
             </nav>
           </motion.div>
