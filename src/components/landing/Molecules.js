@@ -39,7 +39,10 @@ export default function Molecules({ density = 26, className = "" }) {
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const count = Math.floor((width * height) / 1_000_000 * density) + 14;
+      const count = Math.min(
+        Math.floor((width * height) / 1_000_000 * density) + 14,
+        48,
+      );
       atoms = Array.from({ length: count }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
