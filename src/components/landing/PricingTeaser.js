@@ -6,10 +6,10 @@ import Reveal from "@/components/ui/Reveal";
 import SpotlightCard from "@/components/ui/SpotlightCard";
 
 const PACKS = [
-  { name: "Basic", price: "$5", credits: 100 },
-  { name: "Standard", price: "$10", credits: 250 },
-  { name: "Professional", price: "$20", credits: 600, popular: true },
-  { name: "Business", price: "$50", credits: 2000 },
+  { name: "Basic", price: "$5", credits: 500 },
+  { name: "Standard", price: "$10", credits: 1000 },
+  { name: "Professional", price: "$20", credits: 2000, popular: true },
+  { name: "Business", price: "$50", credits: 5000 },
 ];
 
 const INCLUDED = [
@@ -30,8 +30,8 @@ export default function PricingTeaser() {
           <span className="text-gradient"> seat</span>.
         </h2>
         <p className="mx-auto mt-4 max-w-lg text-secondary-text">
-          A 1K render costs 12 credits, 4K costs 24. Buy a pack, spend it at
-          your own pace.
+          One credit is one cent. A 1K render costs 16 credits, 4K costs 32 —
+          priced at 2x our raw compute cost, nothing hidden.
         </p>
       </Reveal>
 
@@ -56,7 +56,7 @@ export default function PricingTeaser() {
                 {pack.credits.toLocaleString()} credits
               </div>
               <div className="mt-1 text-xs text-secondary-text">
-                ≈ {Math.floor(pack.credits / 12)} images at 1K
+                ≈ {Math.floor(pack.credits / 16)} images at 1K
               </div>
               <Link
                 href="/pricing"

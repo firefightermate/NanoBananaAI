@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { AIService } from "@/lib/services/ai";
+import { prisma } from "@/lib/prisma";
+
+// Per-account daily ceiling — protects the fal balance from runaway loops
+// and scripted abuse. Generous enough that no honest user hits it.
+const DAILY_RENDER_LIMIT = 30;
 
 export async function POST(req) {
   try {
@@ -9,6 +14,18 @@ export async function POST(req) {
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const todayCount = await prisma.creation.count({
+      where: { userId: session.user.id, createdAt: { gte: startOfDay } },
+    });
+    if (todayCount >= DAILY_RENDER_LIMIT) {
+      return NextResponse.json(
+        { error: `Daily limit reached (${DAILY_RENDER_LIMIT} renders). Resets at midnight UTC.` },
+        { status: 429 },
+      );
     }
 
     const body = await req.json();

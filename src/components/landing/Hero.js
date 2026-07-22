@@ -13,7 +13,7 @@ import CountUp from "@/components/ui/CountUp";
 const STATS = [
   { value: 4, suffix: "K", label: "Max resolution" },
   { value: 12, suffix: "", label: "Aspect ratios" },
-  { value: 36, suffix: "", label: "Free credits" },
+  { value: 3, suffix: "", label: "Free renders" },
 ];
 
 export default function Hero() {

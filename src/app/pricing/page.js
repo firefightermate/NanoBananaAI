@@ -8,10 +8,10 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
 const PLANS = [
-  { id: "basic", name: "Basic Pack", price: "$5", credits: 100, description: "Perfect for testing custom prompts and exploring styles." },
-  { id: "standard", name: "Standard Pack", price: "$10", credits: 250, description: "Ideal for regular creators wanting high resolution outputs." },
-  { id: "pro", name: "Professional Pack", price: "$20", credits: 600, description: "Designed for power users demanding batch exports and high speed.", popular: true },
-  { id: "business", name: "Business Pack", price: "$50", credits: 2000, description: "Maximum value pack for agency workflows and large volume generations." }
+  { id: "basic", name: "Basic Pack", price: "$5", credits: 500, description: "About 31 renders. Perfect for testing prompts and exploring styles." },
+  { id: "standard", name: "Standard Pack", price: "$10", credits: 1000, description: "About 62 renders. Ideal for regular creators." },
+  { id: "pro", name: "Professional Pack", price: "$20", credits: 2000, description: "About 125 renders. For power users and batch workflows.", popular: true },
+  { id: "business", name: "Business Pack", price: "$50", credits: 5000, description: "About 312 renders. For agencies and heavy volume." }
 ];
 
 export default function Pricing() {

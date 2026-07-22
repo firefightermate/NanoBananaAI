@@ -51,14 +51,15 @@ function extractImageUrl(payload) {
  */
 export const AIService = {
   /**
-   * Calculate credit cost based on resolution
+   * Credit cost per render. 1 credit = $0.01 of pack value; prices are set
+   * at ~2x the fal compute cost ($0.08/image at 1K).
    */
   getCreditCost(resolution) {
     switch ((resolution || "").toLowerCase()) {
-      case "2k": return 18;
-      case "4k": return 24;
+      case "2k": return 24;
+      case "4k": return 32;
       case "1k":
-      default: return 12;
+      default: return 16;
     }
   },
 

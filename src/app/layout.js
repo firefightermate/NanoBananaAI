@@ -16,7 +16,7 @@ export const metadata = {
   metadataBase: new URL("https://kalium-one.vercel.app"),
   title: `${config.appName} — ${config.tagline}`,
   description:
-    "Generate and edit photoreal images from plain language. Powered by Google's nano banana image model. 36 free credits, no card required.",
+    "Generate and edit photoreal images from plain language. Powered by Google's nano banana image model. 3 free renders, no card required.",
   keywords: [
     "AI image generator",
     "nano banana",
@@ -27,7 +27,7 @@ export const metadata = {
   openGraph: {
     title: `${config.appName} — ${config.tagline}`,
     description:
-      "Generate and edit photoreal images from plain language. 36 free credits, no card required.",
+      "Generate and edit photoreal images from plain language. 3 free renders, no card required.",
     type: "website",
     url: "https://kalium-one.vercel.app",
     images: [{ url: "/og.jpg", width: 1376, height: 768, alt: "Kalium — Type words. Get art." }],
@@ -36,7 +36,7 @@ export const metadata = {
     card: "summary_large_image",
     title: `${config.appName} — ${config.tagline}`,
     description:
-      "Generate and edit photoreal images from plain language. 36 free credits, no card required.",
+      "Generate and edit photoreal images from plain language. 3 free renders, no card required.",
     images: ["/og.jpg"],
   },
 };

@@ -45,9 +45,9 @@ const ASPECT_RATIOS = [
 ];
 
 const RESOLUTIONS = [
-  { value: "1k", cost: 12 },
-  { value: "2k", cost: 18 },
-  { value: "4k", cost: 24 },
+  { value: "1k", cost: 16 },
+  { value: "2k", cost: 24 },
+  { value: "4k", cost: 32 },
 ];
 
 const IDEAS = [
