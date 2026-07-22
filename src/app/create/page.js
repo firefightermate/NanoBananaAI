@@ -23,6 +23,10 @@ import {
 } from "react-icons/fi";
 import { downloadImage } from "@/lib/utils";
 import Aurora from "@/components/landing/Aurora";
+import HudFrame from "@/components/game/HudFrame";
+import XpBadge from "@/components/game/XpBadge";
+import { RarityStamp, RarityGlow, Confetti } from "@/components/game/RarityReveal";
+import { rollRarity, xpFromRenders } from "@/lib/game";
 
 /* ------------------------------------------------------------------ */
 /* Data                                                               */
@@ -59,12 +63,12 @@ const IDEAS = [
 ];
 
 const STATUS_LINES = [
-  "Reading the prompt…",
-  "Composing the frame…",
-  "Diffusing pixels…",
-  "Refining edges…",
-  "Balancing light…",
-  "Almost there…",
+  "> parsing prompt lattice…",
+  "> composing the frame…",
+  "> diffusing pixels…",
+  "> refining edges…",
+  "> balancing light…",
+  "> finalizing render…",
 ];
 
 /* ------------------------------------------------------------------ */
@@ -259,6 +263,21 @@ export default function Create() {
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]); // {url, prompt}
 
+  // Game layer: render count feeds XP/level; each completion pops a toast,
+  // shakes the canvas and rolls a rarity for the frame.
+  const [renderCount, setRenderCount] = useState(0);
+  const [xpToast, setXpToast] = useState(null);
+  const [shaking, setShaking] = useState(false);
+  const rarity = resultUrl ? rollRarity(resultUrl) : null;
+
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/creations")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => Array.isArray(data) && setRenderCount(data.length))
+      .catch(() => {});
+  }, [session]);
+
   // Typewriter placeholder cycling through ideas.
   const [placeholder, setPlaceholder] = useState("");
   const placeholderIdea = useRef(0);
@@ -373,6 +392,12 @@ export default function Create() {
         setResultUrl(data.imageUrl);
         setHistory((h) => [{ url: data.imageUrl, prompt: promptUsed }, ...h].slice(0, 12));
         setLoading(false);
+        // game feedback: shake, +XP toast, count tick
+        setRenderCount((c) => c + 1);
+        setXpToast(`+12 XP`);
+        setShaking(true);
+        setTimeout(() => setShaking(false), 500);
+        setTimeout(() => setXpToast(null), 2200);
       } else if (data.status === "failed") {
         throw new Error(data.error || "Generation failed.");
       } else {
@@ -439,8 +464,11 @@ export default function Create() {
     <div className="relative flex h-[calc(100dvh-69px)] flex-col overflow-hidden">
       <Aurora />
 
-      {/* Mode switch — floating top centre */}
-      <div className="relative z-20 flex justify-center pt-5">
+      {/* Top bar: player plate left, mode switch centre */}
+      <div className="relative z-20 flex items-center justify-between px-5 pt-5">
+        <div className="hidden sm:block">
+          {session ? <XpBadge xp={xpFromRenders(renderCount)} /> : <div className="w-40" />}
+        </div>
         <div className="flex rounded-full border border-glass-border bg-glass-bg p-1 backdrop-blur-xl">
           {[
             { id: "generate", label: "Generate", Icon: FiImage },
@@ -467,10 +495,32 @@ export default function Create() {
             </button>
           ))}
         </div>
+        <div className="hidden w-40 sm:block" />
       </div>
 
       {/* Canvas */}
-      <div className="relative z-10 flex flex-1 items-center justify-center overflow-y-auto px-6 py-6 custom-scrollbar">
+      <div
+        className={`relative z-10 flex flex-1 items-center justify-center overflow-y-auto px-6 py-6 custom-scrollbar ${
+          shaking ? "animate-shake" : ""
+        }`}
+      >
+        <HudFrame />
+
+        {/* +XP toast */}
+        <AnimatePresence>
+          {xpToast && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.8 }}
+              animate={{ opacity: 1, y: -30, scale: 1 }}
+              exit={{ opacity: 0, y: -60 }}
+              transition={{ duration: 0.9, ease: "easeOut" }}
+              className="pointer-events-none absolute left-1/2 top-1/3 z-30 -translate-x-1/2 text-2xl font-black text-primary"
+              style={{ textShadow: "0 0 20px color-mix(in srgb, var(--color-primary) 60%, transparent)" }}
+            >
+              {xpToast}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <AnimatePresence mode="wait">
           {!resultUrl && !loading && !error && (
             <EmptyState
@@ -522,15 +572,20 @@ export default function Create() {
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               exit={{ opacity: 0, scale: 0.97 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="group relative max-w-full overflow-hidden rounded-2xl border border-glass-border shadow-[0_50px_140px_-40px_rgba(0,0,0,0.95)]"
+              className="group relative max-w-full rounded-2xl border border-glass-border shadow-[0_50px_140px_-40px_rgba(0,0,0,0.95)]"
             >
-              <img
-                src={resultUrl}
-                alt={prompt}
-                className="h-auto max-h-[62vh] w-auto max-w-full"
-              />
+              {rarity && <RarityGlow rarity={rarity} />}
+              {rarity && <RarityStamp rarity={rarity} />}
+              {rarity?.key === "legendary" && <Confetti />}
+              <div className="overflow-hidden rounded-2xl">
+                <img
+                  src={resultUrl}
+                  alt={prompt}
+                  className="h-auto max-h-[62vh] w-auto max-w-full"
+                />
+              </div>
               {/* hover actions */}
-              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-5 opacity-0 transition-opacity duration-400 group-hover:opacity-100">
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 rounded-b-2xl bg-gradient-to-t from-black/90 via-black/30 to-transparent p-5 opacity-0 transition-opacity duration-400 group-hover:opacity-100">
                 <p className="min-w-0 truncate text-xs font-medium text-white/90">
                   {prompt || "Untitled"}
                 </p>
@@ -835,7 +890,7 @@ export default function Create() {
                   <FiZap />
                 )}
                 <span className="relative hidden sm:inline">
-                  {loading ? "Rendering" : `Render · ${resolution.cost} cr`}
+                  {loading ? "Igniting" : `Ignite · ${resolution.cost} cr`}
                 </span>
                 <span className="relative sm:hidden">{resolution.cost} cr</span>
               </motion.button>

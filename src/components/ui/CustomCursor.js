@@ -1,51 +1,88 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 /**
- * Site-wide custom cursor: a solid dot pinned to the pointer and a lagging
- * ring that spring-chases it. Desktop fine pointers only.
- *
- * Perf notes: mousemove only writes motion values (no React state, no DOM
- * queries). Hover detection rides on mouseover/mouseout, which fire on
- * target change instead of every pixel.
+ * Site-wide custom cursor. The dot is moved by writing transform directly to
+ * the DOM inside the mousemove handler — no React, no framer, no batching —
+ * so it cannot trail the pointer. The ring lerps toward the pointer in a
+ * single rAF loop. Desktop fine pointers only.
  */
 const INTERACTIVE =
   "a, button, [role='button'], input, textarea, select, label, .cursor-target";
 
 export default function CustomCursor() {
   const [enabled, setEnabled] = useState(false);
-  const [hovering, setHovering] = useState(false);
-  const [pressed, setPressed] = useState(false);
-  const [visible, setVisible] = useState(false);
-
-  const x = useMotionValue(-100);
-  const y = useMotionValue(-100);
-  const ringX = useSpring(x, { stiffness: 400, damping: 28, mass: 0.45 });
-  const ringY = useSpring(y, { stiffness: 400, damping: 28, mass: 0.45 });
+  const dotRef = useRef(null);
+  const ringRef = useRef(null);
 
   useEffect(() => {
     const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
     if (!fine.matches) return;
     setEnabled(true);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const dot = dotRef.current;
+    const ring = ringRef.current;
+    if (!dot || !ring) return;
+
     document.documentElement.classList.add("has-custom-cursor");
 
-    let shown = false;
-    const move = (e) => {
-      x.set(e.clientX);
-      y.set(e.clientY);
-      if (!shown) {
-        shown = true;
-        setVisible(true);
-      }
+    let mx = -100;
+    let my = -100;
+    let rx = -100;
+    let ry = -100;
+    let hovering = false;
+    let pressed = false;
+    let visible = false;
+    let raf;
+
+    const paintRing = () => {
+      const size = hovering ? 42 : 24;
+      const scale = pressed ? 0.8 : 1;
+      ring.style.width = `${size}px`;
+      ring.style.height = `${size}px`;
+      ring.style.opacity = visible ? (hovering ? "0.9" : "0.5") : "0";
+      ring.style.backgroundColor = hovering
+        ? "color-mix(in srgb, var(--color-primary) 12%, transparent)"
+        : "transparent";
+      ring.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%) scale(${scale})`;
     };
-    const over = (e) => setHovering(Boolean(e.target.closest?.(INTERACTIVE)));
-    const down = () => setPressed(true);
-    const up = () => setPressed(false);
+
+    const move = (e) => {
+      mx = e.clientX;
+      my = e.clientY;
+      if (!visible) {
+        visible = true;
+        dot.style.opacity = "1";
+      }
+      // dot: written synchronously — glued to the pointer
+      dot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%) scale(${pressed ? 0.6 : 1})`;
+    };
+
+    const loop = () => {
+      rx += (mx - rx) * 0.22;
+      ry += (my - ry) * 0.22;
+      paintRing();
+      raf = requestAnimationFrame(loop);
+    };
+
+    const over = (e) => {
+      hovering = Boolean(e.target.closest?.(INTERACTIVE));
+    };
+    const down = () => {
+      pressed = true;
+      dot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%) scale(0.6)`;
+    };
+    const up = () => {
+      pressed = false;
+      dot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%) scale(1)`;
+    };
     const leave = () => {
-      shown = false;
-      setVisible(false);
+      visible = false;
+      dot.style.opacity = "0";
     };
 
     window.addEventListener("mousemove", move, { passive: true });
@@ -53,43 +90,39 @@ export default function CustomCursor() {
     window.addEventListener("mousedown", down);
     window.addEventListener("mouseup", up);
     document.documentElement.addEventListener("mouseleave", leave);
+    raf = requestAnimationFrame(loop);
+
     return () => {
       document.documentElement.classList.remove("has-custom-cursor");
+      cancelAnimationFrame(raf);
       window.removeEventListener("mousemove", move);
       document.removeEventListener("mouseover", over);
       window.removeEventListener("mousedown", down);
       window.removeEventListener("mouseup", up);
       document.documentElement.removeEventListener("mouseleave", leave);
     };
-  }, [x, y]);
+  }, [enabled]);
 
   if (!enabled) return null;
 
   return (
     <>
-      {/* dot — rides the raw motion values, zero lag */}
-      <motion.div
+      <div
+        ref={dotRef}
         aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-[9999] h-1.5 w-1.5 rounded-full bg-primary"
-        style={{ x, y, translateX: "-50%", translateY: "-50%" }}
-        animate={{ opacity: visible ? 1 : 0, scale: pressed ? 0.6 : 1 }}
-        transition={{ duration: 0.12 }}
+        className="pointer-events-none fixed left-0 top-0 z-[9999] h-1.5 w-1.5 rounded-full bg-primary opacity-0"
+        style={{ transition: "opacity 120ms" }}
       />
-      {/* chasing ring */}
-      <motion.div
+      <div
+        ref={ringRef}
         aria-hidden
         className="pointer-events-none fixed left-0 top-0 z-[9998] rounded-full border border-primary/60"
-        style={{ x: ringX, y: ringY, translateX: "-50%", translateY: "-50%" }}
-        animate={{
-          width: hovering ? 42 : 24,
-          height: hovering ? 42 : 24,
-          opacity: visible ? (hovering ? 0.9 : 0.5) : 0,
-          scale: pressed ? 0.8 : 1,
-          backgroundColor: hovering
-            ? "color-mix(in srgb, var(--color-primary) 12%, transparent)"
-            : "rgba(0,0,0,0)",
+        style={{
+          width: 24,
+          height: 24,
+          opacity: 0,
+          transition: "width 200ms, height 200ms, background-color 200ms",
         }}
-        transition={{ type: "spring", stiffness: 380, damping: 26 }}
       />
     </>
   );
