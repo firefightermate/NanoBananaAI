@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * Ambient background: colour fields, masked grid, grain.
+ * Ambient background v3 — "horizon glow".
  *
- * Perf-critical: the blobs are radial gradients with alpha falloff — NOT
- * filter:blur — and drift via CSS keyframe transforms only, so the browser
- * composites them on the GPU without repainting. No JS, no framer-motion.
+ * Layers (bottom to top): star dust, blueprint grid, a glowing horizon arc,
+ * two huge slowly-rotating light beams, drifting colour fields, grain.
+ * Everything is a gradient animated by transform only — GPU composited,
+ * nothing repaints per frame.
  */
 export default function Aurora({ className = "" }) {
   return (
@@ -13,29 +14,47 @@ export default function Aurora({ className = "" }) {
       aria-hidden
       className={`pointer-events-none absolute inset-0 overflow-hidden grain ${className}`}
     >
-      <div className="absolute inset-0 grid-bg opacity-[0.5]" />
+      {/* star dust — two layers drifting at different speeds for depth */}
+      <div className="star-layer" style={{ animationDuration: "180s" }} />
+      <div
+        className="star-layer star-layer-far"
+        style={{ animationDuration: "320s" }}
+      />
 
+      <div className="absolute inset-0 grid-bg opacity-40" />
+
+      {/* rotating light beams */}
+      <div className="beam" style={{ animationDuration: "48s" }} />
+      <div
+        className="beam beam-reverse"
+        style={{ animationDuration: "64s", opacity: 0.5 }}
+      />
+
+      {/* glowing horizon arc */}
+      <div className="horizon-arc" />
+
+      {/* drifting colour fields */}
       <div
         className="aurora-blob absolute -top-[20%] left-[-10%] h-[60vw] w-[60vw]"
         style={{
           background:
-            "radial-gradient(closest-side, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 72%)",
+            "radial-gradient(closest-side, color-mix(in srgb, var(--color-primary) 20%, transparent), transparent 72%)",
           animationDuration: "26s",
         }}
       />
       <div
-        className="aurora-blob aurora-blob-reverse absolute top-[10%] right-[-15%] h-[55vw] w-[55vw]"
+        className="aurora-blob aurora-blob-reverse absolute top-[5%] right-[-15%] h-[55vw] w-[55vw]"
         style={{
           background:
-            "radial-gradient(closest-side, color-mix(in srgb, var(--accent) 16%, transparent), transparent 72%)",
+            "radial-gradient(closest-side, color-mix(in srgb, var(--accent) 20%, transparent), transparent 72%)",
           animationDuration: "32s",
         }}
       />
       <div
-        className="aurora-blob absolute bottom-[-25%] left-[25%] h-[50vw] w-[50vw]"
+        className="aurora-blob absolute bottom-[-25%] left-[20%] h-[55vw] w-[55vw]"
         style={{
           background:
-            "radial-gradient(closest-side, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 72%)",
+            "radial-gradient(closest-side, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 72%)",
           animationDuration: "38s",
         }}
       />
