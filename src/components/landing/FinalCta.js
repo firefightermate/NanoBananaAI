@@ -49,7 +49,7 @@ export default function FinalCta() {
       <div className="relative mx-auto max-w-4xl px-6 text-center">
         <Reveal>
           <h2 className="text-[clamp(2.5rem,7vw,4.5rem)] font-black leading-[0.95] tracking-tight">
-            Your first fifty credits
+            Your first thirty-six credits
             <br />
             <span className="text-gradient">are already waiting.</span>
           </h2>
