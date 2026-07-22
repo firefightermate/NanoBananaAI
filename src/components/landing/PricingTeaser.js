@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { FiCheck } from "react-icons/fi";
 import Reveal from "@/components/ui/Reveal";
+import SpotlightCard from "@/components/ui/SpotlightCard";
 
 const PACKS = [
   { name: "Basic", price: "$5", credits: 100 },
@@ -38,12 +38,8 @@ export default function PricingTeaser() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PACKS.map((pack, i) => (
           <Reveal key={pack.name} delay={i * 0.06}>
-            <motion.div
-              whileHover={{ y: -6 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className={`edge-card relative h-full p-6 ${
-                pack.popular ? "ring-1 ring-primary/40" : ""
-              }`}
+            <SpotlightCard
+              className={`h-full p-6 ${pack.popular ? "ring-1 ring-primary/40" : ""}`}
             >
               {pack.popular && (
                 <span className="absolute -top-2.5 left-6 rounded-full bg-primary px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-primary-btn-text">
@@ -72,7 +68,7 @@ export default function PricingTeaser() {
               >
                 Get {pack.name}
               </Link>
-            </motion.div>
+            </SpotlightCard>
           </Reveal>
         ))}
       </div>

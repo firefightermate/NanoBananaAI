@@ -8,8 +8,16 @@ import Reveal from "@/components/ui/Reveal";
 
 function Tile({ item }) {
   return (
-    <div className="group relative aspect-[4/5] w-56 shrink-0 overflow-hidden rounded-2xl border border-glass-border sm:w-64">
+    <motion.div
+      whileHover={{ scale: 1.06, rotateX: 4, rotateY: -4, zIndex: 5 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      style={{ transformPerspective: 900 }}
+      className="group relative aspect-[4/5] w-56 shrink-0 overflow-hidden rounded-2xl border border-glass-border sm:w-64"
+    >
       <ArtTile seed={item.prompt} src={item.src} alt={item.prompt} />
+
+      {/* shine sweep */}
+      <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
@@ -19,7 +27,7 @@ function Tile({ item }) {
         </div>
         <p className="text-[11px] leading-snug text-white/90">{item.prompt}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -68,7 +76,7 @@ export default function Showcase() {
         </Reveal>
       </div>
 
-      <motion.div style={{ y }} className="space-y-4">
+      <motion.div style={{ y, rotate: -2 }} className="scale-[1.04] space-y-4">
         <Row items={SHOWCASE.slice(0, half)} duration={62} />
         <Row items={SHOWCASE.slice(half)} reverse duration={74} />
       </motion.div>

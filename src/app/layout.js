@@ -2,6 +2,7 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "../components/Navbar";
+import CustomCursor from "@/components/ui/CustomCursor";
 import config from "@/lib/config";
 
 const font = Outfit({
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
     <html lang="en" data-theme={theme} className={font.variable}>
       <body className="min-h-dvh flex flex-col bg-bg-page text-primary-text antialiased">
         <Providers>
+          <CustomCursor />
           <Navbar />
           <div className="flex-1 flex flex-col">{children}</div>
         </Providers>

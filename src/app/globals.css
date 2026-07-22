@@ -114,6 +114,22 @@
   }
 }
 
+/* Custom cursor: hide the native one only when the overlay is mounted
+   (fine pointers only) — form fields keep their I-beam for usability. */
+.has-custom-cursor,
+.has-custom-cursor a,
+.has-custom-cursor button,
+.has-custom-cursor [role="button"],
+.has-custom-cursor label {
+  cursor: none;
+}
+
+.has-custom-cursor input,
+.has-custom-cursor textarea,
+.has-custom-cursor select {
+  cursor: auto;
+}
+
 /* ---------- Surfaces ---------- */
 
 .glass-panel {

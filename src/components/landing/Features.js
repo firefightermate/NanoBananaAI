@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   FiEdit3,
   FiLayers,
@@ -10,6 +9,7 @@ import {
   FiType,
 } from "react-icons/fi";
 import Reveal from "@/components/ui/Reveal";
+import SpotlightCard from "@/components/ui/SpotlightCard";
 import CompareSlider from "./CompareSlider";
 
 const SMALL_FEATURES = [
@@ -43,13 +43,7 @@ const SMALL_FEATURES = [
 function Card({ children, className = "", delay = 0 }) {
   return (
     <Reveal delay={delay} className={className}>
-      <motion.div
-        whileHover={{ y: -4 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="edge-card h-full p-6"
-      >
-        {children}
-      </motion.div>
+      <SpotlightCard className="h-full p-6">{children}</SpotlightCard>
     </Reveal>
   );
 }
